@@ -26,6 +26,7 @@ FLEET_DIR_NAME = "_fleet"
 META_NAME = "_fleet_meta.json"
 STATE_NAME = "_fleet.json"
 LOG_NAME = "_fleet_log.jsonl"
+CLOSED_DIR_NAME = "_closed"
 DEFAULT_HUB_NAME = "fleet.md"
 
 
@@ -50,6 +51,15 @@ def enabled() -> bool:
 
 def slug_dir(slug: str) -> Path:
     return plans_dir() / slug
+
+
+def closed_dir(slug: str) -> Path:
+    """`docs/plans/_closed/<slug>/` — where `fleet close` archives a slug."""
+    return plans_dir() / CLOSED_DIR_NAME / slug
+
+
+def archived_state_path(slug: str) -> Path:
+    return closed_dir(slug) / STATE_NAME
 
 
 def state_path(slug: str) -> Path:

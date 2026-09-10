@@ -133,6 +133,19 @@ def load_all_states() -> dict[str, dict]:
     return out
 
 
+def load_archived_state(slug: str) -> dict | None:
+    """State from `docs/plans/_closed/<slug>/`, or None if not archived.
+
+    `load_all_states` covers live slugs only, by design. The renderer needs
+    the archived copy so it can tell "never started" from "closed".
+    """
+    try:
+        with open(paths.archived_state_path(slug), encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
 def load_all_events() -> list[dict]:
     events: list[dict] = []
     for p in glob.glob(str(paths.plans_dir() / "*" / paths.LOG_NAME)):
@@ -426,6 +439,11 @@ def render_tree(states: dict[str, dict], meta: dict) -> str:
     def live_line(slug: str) -> str:
         st = states.get(slug)
         if st is None:
+            archived = load_archived_state(slug)
+            if archived is not None:
+                date = (archived.get("updated") or "")[:10]
+                return (f"- ✅ `{slug}` — closed {date} · ⚠️ still on the "
+                        f"roster; run `fleet close {slug}` to reconcile")
             return f"- ⏳ `{slug}` — (no state yet)"
         piece = roster.get(slug, {}).get("piece", st.get("piece") or "—")
         return (f"- {GLYPH.get(st.get('status'), '?')} `{slug}` — "

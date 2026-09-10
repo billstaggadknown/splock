@@ -275,6 +275,31 @@ def test_tree_no_state_row(fleet_project):
     assert "- ⏳ `fresh_slug` — (no state yet)" in tree
 
 
+def test_tree_archived_slug_still_on_roster_renders_closed(fleet_project):
+    """A roster slug archived WITHOUT the meta reconcile is not a fresh slug.
+
+    Field driver (qum, 2026-09-10): a slug closed 2026-07-26 sat inside its
+    wave as `⏳ (no state yet)` — the renderer's label for work nobody has
+    started — because `live_line` never looked in `_closed/`. The two
+    opposite ends of the lifecycle collapsed onto one row.
+    """
+    archived = paths.closed_dir("archived_slug")
+    archived.mkdir(parents=True)
+    (archived / paths.STATE_NAME).write_text(
+        json.dumps({"slug": "archived_slug", "stage": "closeout",
+                    "status": "closed", "updated": "2026-07-26T21:03:24Z"}),
+        encoding="utf-8",
+    )
+    meta = engine.load_meta()
+    meta["roster"]["archived_slug"] = {"piece": "p-a", "wave": 2}
+    engine.save_meta(meta)
+
+    tree = engine.render_tree(engine.load_all_states(), meta)
+    assert "`archived_slug` — (no state yet)" not in tree
+    assert "- ✅ `archived_slug` — closed 2026-07-26" in tree
+    assert "still on the roster" in tree
+
+
 # ---------------------------------------------------------------------------
 # migrate upgrade: only the missing zones land
 # ---------------------------------------------------------------------------
